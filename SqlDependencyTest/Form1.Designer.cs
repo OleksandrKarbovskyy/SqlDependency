@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
@@ -8,7 +9,7 @@ using System.Security.Permissions;
 
 namespace SqlDependencyTest
 {
-    partial class Form1
+    partial class Form1: IDisposable
     {
         /// <summary>
         /// Required designer variable.
@@ -16,9 +17,10 @@ namespace SqlDependencyTest
         private System.ComponentModel.IContainer components = null;
 
         List<string> NameList = new List<string>();
+        string connectionString = ConfigurationManager.ConnectionStrings["LocalDb"].ConnectionString;
 
         /// <summary>
-        /// Clean up any resources being used.
+        /// Clean up any resources being used. 
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
@@ -28,11 +30,12 @@ namespace SqlDependencyTest
                 components.Dispose();
             }
             base.Dispose(disposing);
+            SqlDependency.Stop(connectionString);
         }
 
         void GetNames()
         {
-            var connectionString = ConfigurationManager.ConnectionStrings["ApplicationDbContext"].ConnectionString;
+           // var connectionString = ConfigurationManager.ConnectionStrings["LocalDb"].ConnectionString;
 
 
             if (!DoesHavePermitions())
@@ -40,8 +43,8 @@ namespace SqlDependencyTest
                 return;
             }
 
-            SqlDependency.Stop(connectionString);
-            SqlDependency.Start(connectionString);
+            //SqlDependency.Stop(connectionString);
+            //SqlDependency.Start(connectionString);
 
             using (SqlConnection con = new SqlConnection(connectionString))
             {
@@ -65,7 +68,7 @@ namespace SqlDependencyTest
                            // Console.WriteLine(reader.GetString(0) + " " + reader.GetString(1));
                             var name = reader.GetString(0) + " " + reader.GetString(1);
                             NameList.Add(name);
-                            Debug.WriteLine(reader.GetString(0) + " " + reader.GetString(1));
+                            //Debug.WriteLine(reader.GetString(0) + " " + reader.GetString(1));
                         }
                     }
 
@@ -77,8 +80,8 @@ namespace SqlDependencyTest
 
         void PrintNames()
         {
-            GetNames();
-
+           GetNames();
+           Debug.WriteLine("Print Names Called");
             if (NameList.Count == 0)
                 Debug.WriteLine("List is empty");
            
@@ -94,7 +97,8 @@ namespace SqlDependencyTest
            
             PrintNames();
             SqlDependency dep = sender as SqlDependency;
-            dep.OnChange -= new OnChangeEventHandler(HandleOnChange);
+            // dep.OnChange -= new OnChangeEventHandler(HandleOnChange);
+            dep.OnChange -= HandleOnChange;
         }
 
         bool DoesHavePermitions()
@@ -153,13 +157,16 @@ namespace SqlDependencyTest
             this.Text = "Form1";
             this.ResumeLayout(false);
 
+            SqlDependency.Start(connectionString);
+
         }
 
         private void Button1_Click(object sender, EventArgs e)
         {
-            PrintNames();
+           GetNames();
         }
 
+       
         #endregion
 
         private System.Windows.Forms.ListBox listBox1;
